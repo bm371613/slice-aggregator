@@ -1,9 +1,11 @@
 import collections
 import typing
 
-from . import by_slice
+from .by_slice import (
+    Aggregator as Dual,
+    V,
+)
 
-V = by_slice.V
 _ASSIGNED_GUARD = object()
 
 
@@ -16,9 +18,9 @@ class _InplaceAddHelper(collections.namedtuple("_AssignableSlice", "callback")):
         return self.callback(-value)
 
 
-class Aggregator:
+class Aggregator(typing.Generic[V]):
 
-    def __init__(self, dual: by_slice.Aggregator, zero: V):
+    def __init__(self, *, dual: Dual, zero: V):
         self.dual = dual
         self.value_offset = zero
 
@@ -51,11 +53,3 @@ class Aggregator:
     def __setitem__(self, key, value):
         if value is not _ASSIGNED_GUARD:
             raise NotImplementedError("Operation not supported!")
-
-
-def fixed_size(size: int, zero: V = 0) -> Aggregator:
-    return Aggregator(by_slice.fixed_size(size, zero), zero)
-
-
-def flexible(zero: V = 0) -> Aggregator:
-    return Aggregator(by_slice.flexible(zero), zero)

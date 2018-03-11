@@ -1,19 +1,24 @@
 import pytest
 
-from slice_aggregator import by_slice
+from slice_aggregator.by_slice import (
+    FixedSizeAggregator,
+    UnboundedAggregator,
+    VariableSizeLeftBoundedAggregator,
+    binary_tail,
+)
 
 
 def test_binary_tail():
-    assert by_slice.binary_tail(0b0) == 0b0
-    assert by_slice.binary_tail(0b1) == 0b1
-    assert by_slice.binary_tail(0b1101001) == 0b1
-    assert by_slice.binary_tail(0b1101010) == 0b10
-    assert by_slice.binary_tail(0b1101100) == 0b100
-    assert by_slice.binary_tail(0b1101000) == 0b1000
+    assert binary_tail(0b0) == 0b0
+    assert binary_tail(0b1) == 0b1
+    assert binary_tail(0b1101001) == 0b1
+    assert binary_tail(0b1101010) == 0b10
+    assert binary_tail(0b1101100) == 0b100
+    assert binary_tail(0b1101000) == 0b1000
 
 
 def test_fixed_size():
-    a = by_slice.fixed_size(10)
+    a = FixedSizeAggregator(table=[0] * 10, zero=0)
     a[0] = 1
     a[5] -= 10
     a[9] += 100
@@ -27,7 +32,7 @@ def test_fixed_size():
 
 
 def test_fixed_size_index_errors():
-    a = by_slice.fixed_size(10)
+    a = FixedSizeAggregator(table=[0] * 10, zero=0)
 
     with pytest.raises(IndexError):
         a[-1] = 1
@@ -54,7 +59,7 @@ def test_custom_values():
         def __neg__(self):
             return V(-self.v)
 
-    a = by_slice.fixed_size(10, zero=V(1))
+    a = FixedSizeAggregator(table=[V(1)] * 10, zero=V(1))
     a[0] = V(4)
     a[3] = V(8)
     a[8] = V(2)
@@ -65,8 +70,11 @@ def test_custom_values():
     assert a[:].v == 64
 
 
-def test_flexible():
-    a = by_slice.flexible()
+def test_unbounded():
+    a = UnboundedAggregator(
+        negative=VariableSizeLeftBoundedAggregator(zero=0),
+        nonnegative=VariableSizeLeftBoundedAggregator(zero=0),
+    )
     m = 10 ** 12
     a[-6 * m] = 1
     a[-1 * m] -= 10

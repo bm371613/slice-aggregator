@@ -23,7 +23,7 @@ class Aggregator(typing.Generic[V]):
 
 class LeftBoundedAggregator(Aggregator):
 
-    def __init__(self, table: T, zero: V):
+    def __init__(self, *, table: T, zero: V):
         self.table = table
         self.zero = zero
 
@@ -73,8 +73,8 @@ class LeftBoundedAggregator(Aggregator):
 
 class FixedSizeAggregator(LeftBoundedAggregator):
 
-    def __init__(self, table: typing.MutableSequence[V], zero: V):
-        super().__init__(table, zero)
+    def __init__(self, *, table: typing.MutableSequence[V], zero: V):
+        super().__init__(table=table, zero=zero)
 
     def _nonzero_ix_upper_bound(self):
         return len(self.table) - 1
@@ -107,8 +107,8 @@ class VariableSizeLeftBoundedAggregator(LeftBoundedAggregator):
         def __len__(self):
             return len(self.data)
 
-    def __init__(self, zero):
-        super().__init__(self.Table(zero), zero)
+    def __init__(self, *, zero):
+        super().__init__(table=self.Table(zero), zero=zero)
         self.heap = IndexedUniqueMaxHeap()
 
     def _nonzero_ix_upper_bound(self) -> int:
@@ -126,7 +126,7 @@ class VariableSizeLeftBoundedAggregator(LeftBoundedAggregator):
 
 class UnboundedAggregator(Aggregator):
 
-    def __init__(self, negative: LeftBoundedAggregator, nonnegative: LeftBoundedAggregator):
+    def __init__(self, *, negative: LeftBoundedAggregator, nonnegative: LeftBoundedAggregator):
         self.negative = negative
         self.nonnegative = nonnegative
 
@@ -167,14 +167,3 @@ class UnboundedAggregator(Aggregator):
             self.negative[-1 - ix] = value
         else:
             self.nonnegative[ix] = value
-
-
-def fixed_size(size: int, zero: V = 0) -> Aggregator:
-    return FixedSizeAggregator([zero for _ in range(size)], zero)
-
-
-def flexible(zero: V = 0) -> Aggregator:
-    return UnboundedAggregator(
-        VariableSizeLeftBoundedAggregator(zero),
-        VariableSizeLeftBoundedAggregator(zero),
-    )
