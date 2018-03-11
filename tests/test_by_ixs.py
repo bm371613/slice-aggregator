@@ -1,11 +1,11 @@
 import pytest
 
-from slice_aggregator import ixs_by_slice
-from slice_aggregator.by_ix import Aggregator
+from slice_aggregator import ixs_by_slices
+from slice_aggregator.by_ixs import Aggregator
 
 
 def test_mixed_slice_types():
-    a = Aggregator(dual=ixs_by_slice())
+    a = Aggregator(dual=ixs_by_slices())
     a[:] += 1
     a[-10:] += 100
     a[-5:5] -= 200
@@ -22,6 +22,6 @@ def test_mixed_slice_types():
 
 
 def test_setitem_error():
-    a = Aggregator(dual=ixs_by_slice())
+    a = Aggregator(dual=ixs_by_slices())
     with pytest.raises(NotImplementedError):
         a[1] = 3

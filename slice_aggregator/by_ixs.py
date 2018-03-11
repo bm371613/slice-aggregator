@@ -1,7 +1,7 @@
 import collections
 import typing
 
-from .by_slice import (
+from .by_slices import (
     Aggregator as Dual,
     V,
 )

@@ -1,6 +1,6 @@
 import pytest
 
-from slice_aggregator.by_slice import (
+from slice_aggregator.by_slices import (
     FixedSizeAggregator,
     UnboundedAggregator,
     VariableSizeLeftBoundedAggregator,
