@@ -70,6 +70,17 @@ def test_custom_values():
     assert a[:].v == 64
 
 
+def test_variable_size_removes_unnecessary_data():
+    a = VariableSizeLeftBoundedAggregator(zero=0)
+    a[3] += 10
+    a[15] += 15
+    assert len(a.table) == 2
+    assert len(a.heap) == 2
+    a[3] -= 10
+    assert len(a.table) == 1
+    assert len(a.heap) == 1
+
+
 def test_unbounded():
     a = UnboundedAggregator(
         negative=VariableSizeLeftBoundedAggregator(zero=0),
