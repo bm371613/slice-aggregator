@@ -20,7 +20,7 @@ class _InplaceAddHelper(collections.namedtuple("_AssignableSlice", "callback")):
 
 class Aggregator(typing.Generic[V]):
 
-    def __init__(self, *, dual: Dual, zero: V):
+    def __init__(self, *, dual: Dual, zero: V = 0):
         self.dual = dual
         self.value_offset = zero
 

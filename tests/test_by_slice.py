@@ -32,7 +32,7 @@ def test_fixed_size():
 
 
 def test_fixed_size_index_errors():
-    a = FixedSizeAggregator(table=[0] * 10, zero=0)
+    a = FixedSizeAggregator(table=[0] * 10)
 
     with pytest.raises(IndexError):
         a[-1] = 1
@@ -71,7 +71,7 @@ def test_custom_values():
 
 
 def test_variable_size_removes_unnecessary_data():
-    a = VariableSizeLeftBoundedAggregator(zero=0)
+    a = VariableSizeLeftBoundedAggregator()
     a[3] += 10
     a[15] += 15
     assert len(a.table) == 2
@@ -83,8 +83,8 @@ def test_variable_size_removes_unnecessary_data():
 
 def test_unbounded():
     a = UnboundedAggregator(
-        negative=VariableSizeLeftBoundedAggregator(zero=0),
-        nonnegative=VariableSizeLeftBoundedAggregator(zero=0),
+        negative=VariableSizeLeftBoundedAggregator(),
+        nonnegative=VariableSizeLeftBoundedAggregator(),
     )
     m = 10 ** 12
     a[-6 * m] = 1

@@ -4,9 +4,10 @@ from . import (
 )
 
 V = by_slice.V
+Z = by_slice.Z
 
 
-def ixs_by_slice(*, zero: V = 0) -> by_slice.Aggregator[V]:
+def ixs_by_slice(*, zero: V = 0, zero_test: Z = None) -> by_slice.Aggregator[V]:
     """ Returns an object that allows assigning values to indices and aggregating them by slices
 
     Example:
@@ -18,15 +19,16 @@ def ixs_by_slice(*, zero: V = 0) -> by_slice.Aggregator[V]:
     -10
 
     :param zero: additive identity (default 0)
+    :param zero_test: test for zero equality (default compares to `zero` parameter with `==`)
     :return: a new object for aggregating index-assigned values by slices
     """
     return by_slice.UnboundedAggregator(
-        negative=by_slice.VariableSizeLeftBoundedAggregator(zero=zero),
-        nonnegative=by_slice.VariableSizeLeftBoundedAggregator(zero=zero),
+        negative=by_slice.VariableSizeLeftBoundedAggregator(zero=zero, zero_test=zero_test),
+        nonnegative=by_slice.VariableSizeLeftBoundedAggregator(zero=zero, zero_test=zero_test),
     )
 
 
-def slices_by_ix(*, zero: V = 0) -> by_ix.Aggregator[V]:
+def slices_by_ix(*, zero: V = 0, zero_test: Z = None) -> by_ix.Aggregator[V]:
     """ Returns an object that allows assigning values to slices and aggregating them by indices
 
     Example:
@@ -38,6 +40,7 @@ def slices_by_ix(*, zero: V = 0) -> by_ix.Aggregator[V]:
     -10
 
     :param zero: additive identity (default 0)
+    :param zero_test: test for zero equality (default compares to `zero` parameter with `==`)
     :return: a new object for aggregating slice-assigned values by indices
     """
-    return by_ix.Aggregator(dual=ixs_by_slice(zero=zero), zero=zero)
+    return by_ix.Aggregator(dual=ixs_by_slice(zero=zero, zero_test=zero_test), zero=zero)

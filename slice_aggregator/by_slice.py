@@ -10,6 +10,7 @@ def binary_tail(n: int) -> int:
 
 V = typing.TypeVar('V')  # value type
 T = typing.Union[typing.MutableSequence[V], typing.MutableMapping[int, V]]  # table type
+Z = typing.Callable[[V], bool]  # zero test
 
 
 class Aggregator(typing.Generic[V]):
@@ -23,7 +24,7 @@ class Aggregator(typing.Generic[V]):
 
 class LeftBoundedAggregator(Aggregator):
 
-    def __init__(self, *, table: T, zero: V):
+    def __init__(self, *, table: T, zero: V = 0):
         self.table = table
         self.zero = zero
 
@@ -73,7 +74,7 @@ class LeftBoundedAggregator(Aggregator):
 
 class FixedSizeAggregator(LeftBoundedAggregator):
 
-    def __init__(self, *, table: typing.MutableSequence[V], zero: V):
+    def __init__(self, *, table: typing.MutableSequence[V], zero: V = 0):
         super().__init__(table=table, zero=zero)
 
     def _nonzero_ix_upper_bound(self):
@@ -84,41 +85,46 @@ class VariableSizeLeftBoundedAggregator(LeftBoundedAggregator):
 
     class Table(typing.MutableMapping[int, V]):
 
-        def __init__(self, zero):
+        def __init__(self, *, zero: V, zero_test: Z):
             super().__init__()
             self.zero = zero
+            self.zero_test = zero_test
             self.data = {}
 
-        def __getitem__(self, ix):
+        def __getitem__(self, ix: int) -> V:
             return self.data.get(ix, self.zero)
 
-        def __setitem__(self, ix, value):
-            if value == self.zero:
+        def __setitem__(self, ix: int, value: V) -> None:
+            if self.zero_test(value):
                 del self.data[ix]
             else:
                 self.data[ix] = value
 
-        def __delitem__(self, ix):
+        def __delitem__(self, ix: int) -> None:
             del self.data
 
-        def __iter__(self):
+        def __iter__(self) -> typing.Iterable[int]:
             return iter(self.data)
 
-        def __len__(self):
+        def __len__(self) -> int:
             return len(self.data)
 
-    def __init__(self, *, zero):
-        super().__init__(table=self.Table(zero), zero=zero)
+    def __init__(self, *, zero: V = 0, zero_test: Z = None):
+        if zero_test is None:
+            def zero_test(v):
+                return v == zero
+        super().__init__(table=self.Table(zero=zero, zero_test=zero_test), zero=zero)
         self.heap = IndexedUniqueMaxHeap()
+        self.zero_test = zero_test
 
     def _nonzero_ix_upper_bound(self) -> int:
-        if not self.table.data:
+        if not len(self.table):
             return 0
         return self.heap.max()
 
     def __setitem__(self, ix: int, value: V) -> None:
         super().__setitem__(ix, value)
-        if value == self.zero:
+        if self.zero_test(value):
             self.heap.remove(ix)
         else:
             self.heap.add(ix)
