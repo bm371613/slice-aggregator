@@ -1,4 +1,5 @@
 from . import (
+    __about__ as about,
     by_ixs,
     by_slices,
 )

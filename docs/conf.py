@@ -17,6 +17,9 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
+import slice_aggregator
+
+
 # -- Project information -----------------------------------------------------
 
 project = 'slice-aggregator'
@@ -24,9 +27,9 @@ copyright = '2018, Bartosz Marcinkowski'
 author = 'Bartosz Marcinkowski'
 
 # The short X.Y version
-version = ''
+version = slice_aggregator.about.__version__
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = slice_aggregator.about.__version__
 
 
 # -- General configuration ---------------------------------------------------
