@@ -1,6 +1,7 @@
 # slice-aggregator
 
 [![Build Status](https://travis-ci.org/bm371613/slice-aggregator.svg?branch=master)](https://travis-ci.org/bm371613/slice-aggregator)
+[![Documentation Status](https://readthedocs.org/projects/slice-aggregator/badge/?version=latest)](http://slice-aggregator.readthedocs.io/en/latest/?badge=latest)
 
 A library for aggregating values assigned to indices by slices
 
