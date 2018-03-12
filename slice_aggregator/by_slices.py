@@ -15,11 +15,28 @@ Z = typing.Callable[[V], bool]  # zero test
 
 class Aggregator(typing.Generic[V]):
 
-    def __getitem__(self, item: typing.Union[int, slice]) -> V:
+    def get(self, start: typing.Optional[int], stop: typing.Optional[int]) -> V:
         raise NotImplementedError()
 
-    def __setitem__(self, ix: int, value: V) -> None:
+    def inc(self, ix: int, value: V) -> None:
         raise NotImplementedError()
+
+    def dec(self, ix: int, value: V) -> None:
+        self.inc(ix, -value)
+
+    def set(self, ix: int, value: V) -> None:
+        self.inc(ix, value - self.get(ix, ix + 1))
+
+    def __getitem__(self, item: typing.Union[int, slice]) -> V:
+        if isinstance(item, slice):
+            if item.step is not None:
+                raise ValueError("Slicing with step is not supported")
+            return self.get(item.start, item.stop)
+        else:
+            return self.get(item, item + 1)
+
+    def __setitem__(self, ix: int, value: V) -> None:
+        self.set(ix, value)
 
 
 class LeftBoundedAggregator(Aggregator):
@@ -31,20 +48,13 @@ class LeftBoundedAggregator(Aggregator):
     def _nonzero_ix_upper_bound(self) -> int:
         raise NotImplementedError()
 
-    def __getitem__(self, item: typing.Union[int, slice]) -> V:
-        if isinstance(item, slice):
-            if item.step is not None:
-                raise ValueError("Slicing with step is not supported")
-            start = item.start
-            stop = item.stop
-        elif isinstance(item, int):
-            if item < 0:
-                raise IndexError("Index out of range")
-            start = item
-            stop = item + 1
-        else:
-            raise TypeError("Type not supported", type(item))
-
+    def get(self, start: typing.Optional[int], stop: typing.Optional[int]) -> V:
+        if start is not None and start < 0:
+            raise IndexError("start is out of range")
+        if stop is not None and stop < 0:
+            raise IndexError("stop is out of range")
+        if start is not None and stop is not None and start >= stop:
+            return self.zero
         bound = self._nonzero_ix_upper_bound()
         if start is None:
             start = 0
@@ -60,15 +70,11 @@ class LeftBoundedAggregator(Aggregator):
                 stop += binary_tail(stop + 1)  # +1 for 0-based indexing
         return result
 
-    def __setitem__(self, ix: int, value: V) -> None:
-        if not isinstance(ix, int):
-            raise TypeError("Type not supported", type(ix))
+    def inc(self, ix: int, value: V) -> None:
         if ix < 0:
-            raise IndexError("Index out of range")
-
-        diff = value - self[ix]
+            raise IndexError("ix out of range")
         while ix >= 0:
-            self.table[ix] += diff
+            self.table[ix] += value
             ix -= binary_tail(ix + 1)  # +1 for 0-based indexing
 
 
@@ -77,7 +83,7 @@ class FixedSizeAggregator(LeftBoundedAggregator):
     def __init__(self, *, table: typing.MutableSequence[V], zero: V = 0):
         super().__init__(table=table, zero=zero)
 
-    def _nonzero_ix_upper_bound(self):
+    def _nonzero_ix_upper_bound(self) -> int:
         return len(self.table) - 1
 
 
@@ -122,9 +128,10 @@ class VariableSizeLeftBoundedAggregator(LeftBoundedAggregator):
             return 0
         return self.heap.max()
 
-    def __setitem__(self, ix: int, value: V) -> None:
-        super().__setitem__(ix, value)
-        if self.zero_test(value):
+    def inc(self, ix: int, value: V) -> None:
+        new_value = self.get(ix, ix + 1) + value
+        super().inc(ix, value)
+        if self.zero_test(new_value):
             self.heap.remove(ix)
         else:
             self.heap.add(ix)
@@ -136,40 +143,30 @@ class UnboundedAggregator(Aggregator):
         self.negative = negative
         self.nonnegative = nonnegative
 
-    def __getitem__(self, item: typing.Union[int, slice]) -> V:
-        if isinstance(item, slice):
-            if item.step is not None:
-                raise ValueError("Slicing with step is not supported")
-            if item.start is None:
-                if item.stop is None:
-                    return self.negative[:] + self.nonnegative[:]
-                elif item.stop > 0:
-                    return self.negative[:] + self.nonnegative[:item.stop]
-                else:
-                    return self.negative[-item.stop:]
-            elif item.stop is None:
-                if item.start >= 0:
-                    return self.nonnegative[item.start:]
-                else:
-                    return self.negative[:-item.start] + self.nonnegative[:]
-            elif item.start >= item.stop:
-                return self.nonnegative.zero
-            elif 0 <= item.start:
-                return self.nonnegative[item.start:item.stop]
-            elif item.stop <= 0:
-                return self.negative[-item.stop:-item.start]
+    def get(self, start: typing.Optional[int], stop: typing.Optional[int]) -> V:
+        if start is None:
+            if stop is None:
+                return self.negative.get(None, None) + self.nonnegative.get(None, None)
+            elif stop > 0:
+                return self.negative.get(None, None) + self.nonnegative.get(None, stop)
             else:
-                return self.negative[:-item.start] + self.nonnegative[:item.stop]
-        elif isinstance(item, int):
-            if item < 0:
-                return self.negative[-1 - item]
+                return self.negative.get(-stop, None)
+        elif stop is None:
+            if start >= 0:
+                return self.nonnegative.get(start, None)
             else:
-                return self.nonnegative[item]
+                return self.negative.get(None, -start) + self.nonnegative.get(None, None)
+        elif start >= stop:
+            return self.nonnegative.zero
+        elif 0 <= start:
+            return self.nonnegative.get(start, stop)
+        elif stop <= 0:
+            return self.negative.get(-stop, -start)
         else:
-            raise TypeError("Type not supported", type(item))
+            return self.negative.get(None, -start) + self.nonnegative.get(None, stop)
 
-    def __setitem__(self, ix: int, value: V) -> None:
+    def inc(self, ix: int, value: V) -> None:
         if ix < 0:
-            self.negative[-1 - ix] = value
+            self.negative.inc(-1 - ix, value)
         else:
-            self.nonnegative[ix] = value
+            self.nonnegative.inc(ix, value)

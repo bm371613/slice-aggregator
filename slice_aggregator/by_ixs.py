@@ -9,7 +9,7 @@ from .by_slices import (
 _ASSIGNED_GUARD = object()
 
 
-class _InplaceAddHelper(collections.namedtuple("_AssignableSlice", "callback")):
+class _InplaceAddHelper(collections.namedtuple("_InplaceAddHelper", "callback")):
 
     def __iadd__(self, value: V) -> typing.Any:
         return self.callback(value)
@@ -24,7 +24,10 @@ class Aggregator(typing.Generic[V]):
         self.dual = dual
         self.value_offset = zero
 
-    def _increment(self, start: int, stop: int, value: V) -> typing.Any:
+    def get(self, ix: int) -> V:
+        return self.dual[ix:] + self.value_offset
+
+    def inc(self, start: typing.Optional[int], stop: typing.Optional[int], value: V) -> None:
         if start is None:
             if stop is None:
                 self.value_offset += value
@@ -33,23 +36,28 @@ class Aggregator(typing.Generic[V]):
         elif stop is None:
             self.dual[start - 1] -= value
             self.value_offset += value
-        else:
+        elif start < stop:
             self.dual[start - 1] -= value
             self.dual[stop - 1] += value
+        elif start > stop:
+            raise ValueError("start > stop")
+
+    def dec(self, start: typing.Optional[int], stop: typing.Optional[int], value: V) -> None:
+        self.inc(start, stop, -value)
+
+    def _inplace_add_callback(self, start: typing.Optional[int], stop: typing.Optional[int],
+                              value: V) -> typing.Any:
+        self.inc(start, stop, value)
         return _ASSIGNED_GUARD
 
     def __getitem__(self, item: typing.Union[int, slice]) -> typing.Union[V, _InplaceAddHelper]:
         if isinstance(item, slice):
             if item.step is not None:
                 raise ValueError("Slicing with step is not supported")
-            if item.start is not None and item.stop is not None and item.start > item.stop:
-                raise ValueError("Slicing with start > stop are not supported")
-            return _InplaceAddHelper(lambda v: self._increment(item.start, item.stop, v))
-        elif isinstance(item, int):
-            return self.dual[item:] + self.value_offset
+            return _InplaceAddHelper(lambda v: self._inplace_add_callback(item.start, item.stop, v))
         else:
-            raise TypeError("Type not supported", type(item))
+            return self.get(item)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: slice, value: typing.Any) -> None:
         if value is not _ASSIGNED_GUARD:
             raise NotImplementedError("Operation not supported!")
