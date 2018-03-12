@@ -9,7 +9,6 @@ def binary_tail(n: int) -> int:
 
 
 V = typing.TypeVar('V')  # value type
-T = typing.Union[typing.MutableSequence[V], typing.MutableMapping[int, V]]  # table type
 Z = typing.Callable[[V], bool]  # zero test
 
 
@@ -41,9 +40,14 @@ class Aggregator(typing.Generic[V]):
 
 class LeftBoundedAggregator(Aggregator):
 
-    def __init__(self, *, table: T, zero: V = 0):
-        self.table = table
+    def __init__(self, *, zero: V = 0):
         self.zero = zero
+
+    def _table_get(self, ix: int) -> V:
+        raise NotImplementedError()
+
+    def _table_set(self, ix: int, value: V) -> None:
+        raise NotImplementedError()
 
     def _nonzero_ix_upper_bound(self) -> int:
         raise NotImplementedError()
@@ -53,20 +57,20 @@ class LeftBoundedAggregator(Aggregator):
             raise IndexError("start is out of range")
         if stop is not None and stop < 0:
             raise IndexError("stop is out of range")
+        result = self.zero
         if start is not None and stop is not None and start >= stop:
-            return self.zero
+            return result
         bound = self._nonzero_ix_upper_bound()
         if start is None:
             start = 0
         if stop is None:
             stop = bound + 1
-        result = self.zero
         while start != stop and (start <= bound or stop <= bound):
             if start < stop:
-                result += self.table[start]
+                result += self._table_get(start)
                 start += binary_tail(start + 1)  # +1 for 0-based indexing
             else:
-                result -= self.table[stop]
+                result -= self._table_get(stop)
                 stop += binary_tail(stop + 1)  # +1 for 0-based indexing
         return result
 
@@ -74,14 +78,21 @@ class LeftBoundedAggregator(Aggregator):
         if ix < 0:
             raise IndexError("ix out of range")
         while ix >= 0:
-            self.table[ix] += value
+            self._table_set(ix, self._table_get(ix) + value)
             ix -= binary_tail(ix + 1)  # +1 for 0-based indexing
 
 
 class FixedSizeAggregator(LeftBoundedAggregator):
 
     def __init__(self, *, table: typing.MutableSequence[V], zero: V = 0):
-        super().__init__(table=table, zero=zero)
+        super().__init__(zero=zero)
+        self.table = table
+
+    def _table_get(self, ix: int) -> V:
+        return self.table[ix]
+
+    def _table_set(self, ix: int, value: V) -> None:
+        self.table[ix] = value
 
     def _nonzero_ix_upper_bound(self) -> int:
         return len(self.table) - 1
@@ -89,39 +100,23 @@ class FixedSizeAggregator(LeftBoundedAggregator):
 
 class VariableSizeLeftBoundedAggregator(LeftBoundedAggregator):
 
-    class Table(typing.MutableMapping[int, V]):
-
-        def __init__(self, *, zero: V, zero_test: Z):
-            super().__init__()
-            self.zero = zero
-            self.zero_test = zero_test
-            self.data = {}
-
-        def __getitem__(self, ix: int) -> V:
-            return self.data.get(ix, self.zero)
-
-        def __setitem__(self, ix: int, value: V) -> None:
-            if self.zero_test(value):
-                del self.data[ix]
-            else:
-                self.data[ix] = value
-
-        def __delitem__(self, ix: int) -> None:
-            del self.data
-
-        def __iter__(self) -> typing.Iterable[int]:
-            return iter(self.data)
-
-        def __len__(self) -> int:
-            return len(self.data)
-
     def __init__(self, *, zero: V = 0, zero_test: Z = None):
+        super().__init__(zero=zero)
+        self.table = {}
+        self.heap = IndexedUniqueMaxHeap()
         if zero_test is None:
             def zero_test(v):
                 return v == zero
-        super().__init__(table=self.Table(zero=zero, zero_test=zero_test), zero=zero)
-        self.heap = IndexedUniqueMaxHeap()
         self.zero_test = zero_test
+
+    def _table_get(self, ix: int) -> V:
+        return self.table[ix] if ix in self.table else self.zero
+
+    def _table_set(self, ix: int, value: V) -> None:
+        if self.zero_test(value):
+            del self.table[ix]
+        else:
+            self.table[ix] = value
 
     def _nonzero_ix_upper_bound(self) -> int:
         if not len(self.table):
