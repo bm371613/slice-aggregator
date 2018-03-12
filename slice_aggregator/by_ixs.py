@@ -4,6 +4,7 @@ import typing
 from .by_slices import (
     Aggregator as Dual,
     V,
+    ZF,
 )
 
 _ASSIGNED_GUARD = object()
@@ -20,9 +21,9 @@ class _InplaceAddHelper(collections.namedtuple("_InplaceAddHelper", "callback"))
 
 class Aggregator(typing.Generic[V]):
 
-    def __init__(self, *, dual: Dual, zero: V = 0):
+    def __init__(self, *, dual: Dual, zero_factory: ZF = None):
         self.dual = dual
-        self.value_offset = zero
+        self.value_offset = 0 if zero_factory is None else zero_factory()
 
     def get(self, ix: int) -> V:
         return self.dual[ix:] + self.value_offset

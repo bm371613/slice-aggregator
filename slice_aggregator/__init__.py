@@ -4,10 +4,11 @@ from . import (
 )
 
 V = by_slices.V
-Z = by_slices.Z
+ZF = by_slices.ZF
+ZT = by_slices.ZT
 
 
-def ixs_by_slices(*, zero: V = 0, zero_test: Z = None) -> by_slices.Aggregator[V]:
+def ixs_by_slices(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_slices.Aggregator[V]:
     """ Returns an object that allows assigning values to indices and aggregating them by slices
 
     Example:
@@ -18,17 +19,19 @@ def ixs_by_slices(*, zero: V = 0, zero_test: Z = None) -> by_slices.Aggregator[V
     >>> a[-8:]
     -10
 
-    :param zero: additive identity (default 0)
+    :param zero_factory: callable returning additive identity (default returns 0)
     :param zero_test: test for zero equality (default compares to `zero` parameter with `==`)
     :return: a new object for aggregating index-assigned values by slices
     """
     return by_slices.UnboundedAggregator(
-        negative=by_slices.VariableSizeLeftBoundedAggregator(zero=zero, zero_test=zero_test),
-        nonnegative=by_slices.VariableSizeLeftBoundedAggregator(zero=zero, zero_test=zero_test),
+        negative=by_slices.VariableSizeLeftBoundedAggregator(zero_factory=zero_factory,
+                                                             zero_test=zero_test),
+        nonnegative=by_slices.VariableSizeLeftBoundedAggregator(zero_factory=zero_factory,
+                                                                zero_test=zero_test),
     )
 
 
-def slices_by_ixs(*, zero: V = 0, zero_test: Z = None) -> by_ixs.Aggregator[V]:
+def slices_by_ixs(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_ixs.Aggregator[V]:
     """ Returns an object that allows assigning values to slices and aggregating them by indices
 
     Example:
@@ -39,8 +42,11 @@ def slices_by_ixs(*, zero: V = 0, zero_test: Z = None) -> by_ixs.Aggregator[V]:
     >>> a[-8]
     -10
 
-    :param zero: additive identity (default 0)
+    :param zero_factory: callable returning additive identity (default returns 0)
     :param zero_test: test for zero equality (default compares to `zero` parameter with `==`)
     :return: a new object for aggregating slice-assigned values by indices
     """
-    return by_ixs.Aggregator(dual=ixs_by_slices(zero=zero, zero_test=zero_test), zero=zero)
+    return by_ixs.Aggregator(
+        dual=ixs_by_slices(zero_factory=zero_factory, zero_test=zero_test),
+        zero_factory=zero_factory,
+    )

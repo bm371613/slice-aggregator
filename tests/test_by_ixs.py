@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from slice_aggregator import ixs_by_slices
@@ -25,3 +26,31 @@ def test_setitem_error():
     a = Aggregator(dual=ixs_by_slices())
     with pytest.raises(NotImplementedError):
         a[1] = 3
+
+
+def test_numpy_array():
+    def zero_factory():
+        return np.zeros(4)
+
+    zero = zero_factory()
+
+    def zero_test(v):
+        return np.array_equal(zero, v)
+
+    a = Aggregator(
+        dual=ixs_by_slices(zero_factory=zero_factory, zero_test=zero_test),
+        zero_factory=zero_factory,
+    )
+    a.inc(None, None, np.array((1, 0, 0, 0)))
+    a.inc(-10, None, np.array((0, 1, 0, 0)))
+    a.dec(-5, 5, np.array((0, 0, 1, 0)))
+    a.inc(None, 10, np.array((0, 0, 0, 1)))
+
+    assert np.array_equal(a.get(-11), np.array((1, 0, 0, 1)))
+    assert np.array_equal(a.get(-10), np.array((1, 1, 0, 1)))
+    assert np.array_equal(a.get(-6), np.array((1, 1, 0, 1)))
+    assert np.array_equal(a.get(-5), np.array((1, 1, -1, 1)))
+    assert np.array_equal(a.get(4), np.array((1, 1, -1, 1)))
+    assert np.array_equal(a.get(5), np.array((1, 1, 0, 1)))
+    assert np.array_equal(a.get(9), np.array((1, 1, 0, 1)))
+    assert np.array_equal(a.get(10), np.array((1, 1, 0, 0)))

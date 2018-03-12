@@ -9,7 +9,8 @@ def binary_tail(n: int) -> int:
 
 
 V = typing.TypeVar('V')  # value type
-Z = typing.Callable[[V], bool]  # zero test
+ZF = typing.Callable[[], V]  # zero factory
+ZT = typing.Callable[[V], bool]  # zero test
 
 
 class Aggregator(typing.Generic[V]):
@@ -40,8 +41,11 @@ class Aggregator(typing.Generic[V]):
 
 class LeftBoundedAggregator(Aggregator):
 
-    def __init__(self, *, zero: V = 0):
-        self.zero = zero
+    def __init__(self, *, zero_factory: ZF = None):
+        if zero_factory is None:
+            def zero_factory():
+                return 0
+        self.zero_factory = zero_factory
 
     def _table_get(self, ix: int) -> V:
         raise NotImplementedError()
@@ -57,7 +61,7 @@ class LeftBoundedAggregator(Aggregator):
             raise IndexError("start is out of range")
         if stop is not None and stop < 0:
             raise IndexError("stop is out of range")
-        result = self.zero
+        result = self.zero_factory()
         if start is not None and stop is not None and start >= stop:
             return result
         bound = self._nonzero_ix_upper_bound()
@@ -84,8 +88,8 @@ class LeftBoundedAggregator(Aggregator):
 
 class FixedSizeAggregator(LeftBoundedAggregator):
 
-    def __init__(self, *, table: typing.MutableSequence[V], zero: V = 0):
-        super().__init__(zero=zero)
+    def __init__(self, *, table: typing.MutableSequence[V], zero_factory: ZF = None):
+        super().__init__(zero_factory=zero_factory)
         self.table = table
 
     def _table_get(self, ix: int) -> V:
@@ -100,13 +104,14 @@ class FixedSizeAggregator(LeftBoundedAggregator):
 
 class VariableSizeLeftBoundedAggregator(LeftBoundedAggregator):
 
-    def __init__(self, *, zero: V = 0, zero_test: Z = None):
-        super().__init__(zero=zero)
+    def __init__(self, *, zero_factory: ZF = None, zero_test: ZT = None):
+        super().__init__(zero_factory=zero_factory)
         self.table = {}
         self.heap = IndexedUniqueMaxHeap()
+        self.zero = zero_factory() if zero_factory is not None else 0  # read only
         if zero_test is None:
             def zero_test(v):
-                return v == zero
+                return v == self.zero
         self.zero_test = zero_test
 
     def _table_get(self, ix: int) -> V:

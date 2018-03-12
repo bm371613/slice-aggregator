@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from slice_aggregator.by_slices import (
@@ -18,7 +19,7 @@ def test_binary_tail():
 
 
 def test_fixed_size():
-    a = FixedSizeAggregator(table=[0] * 10, zero=0)
+    a = FixedSizeAggregator(table=[0] * 10)
     a[0] = 1
     a[5] -= 10
     a[9] += 100
@@ -40,7 +41,7 @@ def test_fixed_size_index_errors():
         a[10] = 1
 
 
-def test_custom_values():
+def test_fixed_size_custom_values():
 
     class V:
 
@@ -59,7 +60,7 @@ def test_custom_values():
         def __neg__(self):
             return V(-self.v)
 
-    a = FixedSizeAggregator(table=[V(1)] * 10, zero=V(1))
+    a = FixedSizeAggregator(table=[V(1)] * 10, zero_factory=lambda: V(1))
     a[0] = V(4)
     a[3] = V(8)
     a[8] = V(2)
@@ -96,3 +97,29 @@ def test_unbounded():
     assert a[-2 * m:] == 90
     assert a[:0] == -9
     assert a[:] == 91
+
+
+def test_unbounded_numpy_array():
+    def zero_factory():
+        return np.zeros(3)
+
+    zero = zero_factory()
+
+    def zero_test(v):
+        return np.array_equal(zero, v)
+
+    a = UnboundedAggregator(
+        negative=VariableSizeLeftBoundedAggregator(zero_factory=zero_factory,
+                                                   zero_test=zero_test),
+        nonnegative=VariableSizeLeftBoundedAggregator(zero_factory=zero_factory,
+                                                      zero_test=zero_test),
+    )
+    a.set(-6, np.array((1, 2, -1)))
+    a.dec(-1, np.array((10, 20, -10)))
+    a.inc(8, np.array((100, 200, -100)))
+
+    assert np.array_equal(a.get(-1, 0), np.array((-10, -20, 10)))
+    assert np.array_equal(a.get(0, 2), np.array((0, 0, 0)))
+    assert np.array_equal(a.get(-2, None), np.array((90, 180, -90)))
+    assert np.array_equal(a.get(None, 0), np.array((-9, -18, 9)))
+    assert np.array_equal(a.get(None, None), np.array((91, 182, -91)))
