@@ -10,6 +10,7 @@ Welcome to slice-aggregator's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   api.rst
 
 
 Indices and tables
@@ -17,4 +18,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`

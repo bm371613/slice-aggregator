@@ -6,8 +6,11 @@ from setuptools import (
 
 here = os.path.abspath(os.path.dirname(__file__))
 about = {}
-with open(os.path.join(here, 'slice_aggregator', '__about__.py'), 'r') as f:
+with open(os.path.join(here, 'slice_aggregator', '__about__.py')) as f:
     exec(f.read(), about)
+
+with open(os.path.join(here, 'requirements', 'tests.txt')) as f:
+    tests_require = list(f.read().split('\n'))
 
 setup(
     name='slice-aggregator',
@@ -15,5 +18,5 @@ setup(
     packages=find_packages(exclude=['tests']),
     python_requires=">=3.5",
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'numpy'],
+    tests_require=tests_require,
 )

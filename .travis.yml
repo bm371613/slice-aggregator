@@ -3,7 +3,7 @@ python:
   - "3.5"
   - "3.6"
 install:
-  - pip install . pycodestyle
+  - pip install . -r requirements/dev.txt
 script:
   - python setup.py test
   - pycodestyle slice_aggregator tests --max-line-length=100
