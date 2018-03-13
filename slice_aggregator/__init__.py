@@ -20,9 +20,9 @@ def ixs_by_slices(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_slices
     >>> a[-8:]
     -10
 
-    :param zero_factory: callable returning additive identity (default returns 0)
-    :param zero_test: test for zero equality (default compares to `zero` parameter with `==`)
-    :return: a new object for aggregating index-assigned values by slices
+    :param zero_factory: callable returning additive identity
+    :param zero_test: test for equality to zero
+    :return: a new instance of :class:`slice_aggregator.by_slices.Aggregator`
     """
     return by_slices.UnboundedAggregator(
         negative=by_slices.VariableSizeLeftBoundedAggregator(zero_factory=zero_factory,
@@ -43,9 +43,9 @@ def slices_by_ixs(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_ixs.Ag
     >>> a[-8]
     -10
 
-    :param zero_factory: callable returning additive identity (default returns 0)
-    :param zero_test: test for zero equality (default compares to `zero` parameter with `==`)
-    :return: a new object for aggregating slice-assigned values by indices
+    :param zero_factory: callable returning additive identity
+    :param zero_test: test for equality to zero
+    :return: a new instance of :class:`slice_aggregator.by_ixs.Aggregator`
     """
     return by_ixs.Aggregator(
         dual=ixs_by_slices(zero_factory=zero_factory, zero_test=zero_test),

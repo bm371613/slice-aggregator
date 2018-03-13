@@ -14,17 +14,28 @@ ZT = typing.Callable[[V], bool]  # zero test
 
 
 class Aggregator(typing.Generic[V]):
+    """ A data structure for assigning values to indices and aggregating them by slices
+
+    It provides a method-based interface and an alternative based on `__getitem__` and slices.
+
+    **Warning:** only the method-based interface is suitable for custom values handling inplace operators.
+    Read the documentation on advances usage for more details.
+    """
 
     def get(self, start: typing.Optional[int], stop: typing.Optional[int]) -> V:
+        """ Get the aggregated value of all indices contained by the specified slice """
         raise NotImplementedError()
 
     def inc(self, ix: int, value: V) -> None:
+        """ Increment the value assigned to an index """
         raise NotImplementedError()
 
     def dec(self, ix: int, value: V) -> None:
+        """ Decrement the value assigned to an index """
         self.inc(ix, -value)
 
     def set(self, ix: int, value: V) -> None:
+        """ Set the value assigned to an index """
         self.inc(ix, value - self.get(ix, ix + 1))
 
     def __getitem__(self, item: typing.Union[int, slice]) -> V:

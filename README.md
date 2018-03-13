@@ -24,3 +24,5 @@ and the other way around
 >>> a[-8]
 -10
 ```
+
+[Read the docs](https://slice-aggregator.readthedocs.io/) to find out more!
