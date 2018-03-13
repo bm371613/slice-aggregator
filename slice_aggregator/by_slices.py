@@ -18,7 +18,8 @@ class Aggregator(typing.Generic[V]):
 
     It provides a method-based interface and an alternative based on `__getitem__` and slices.
 
-    **Warning:** only the method-based interface is suitable for custom values handling inplace operators.
+    **Warning**
+    Only the method-based interface is suitable for custom values handling inplace operators.
     Read the documentation on advances usage for more details.
     """
 
