@@ -1,7 +1,8 @@
 Time and memory complexity
 ==========================
 
-After assigning values to ``n`` indices/slices that are all within a ``(-v, v)`` interval
+After assigning values to ``n`` unique indices (we treat a slice as, up to two, indices)
+that are all within a ``(-v, v)`` interval:
 
 
 +---------------------------+-----------------+
@@ -12,4 +13,6 @@ After assigning values to ``n`` indices/slices that are all within a ``(-v, v)``
 |Memory                     |O(n log v)       |
 +---------------------------+-----------------+
 
-assuming values and indices are constant-size and basic arithmetic operations on them are constant-time.
+Assumptions:
+ - values and indices are constant-size and basic arithmetic operations on them are constant-time
+ - set item and get item on a ``dict`` are constant-time (which is true on average)

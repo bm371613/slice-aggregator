@@ -12,14 +12,6 @@ ZT = by_slices.ZT
 def ixs_by_slices(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_slices.Aggregator[V]:
     """ Returns an object that allows assigning values to indices and aggregating them by slices
 
-    Example:
-
-    >>> a = ixs_by_slices()
-    >>> a[-4] += 10
-    >>> a[13] -= 20
-    >>> a[-8:]
-    -10
-
     :param zero_factory: callable returning additive identity
     :param zero_test: test for equality to zero
     :return: a new instance of :class:`slice_aggregator.by_slices.Aggregator`
@@ -34,14 +26,6 @@ def ixs_by_slices(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_slices
 
 def slices_by_ixs(*, zero_factory: ZF = None, zero_test: ZT = None) -> by_ixs.Aggregator[V]:
     """ Returns an object that allows assigning values to slices and aggregating them by indices
-
-    Example:
-
-    >>> a = slices_by_ixs()
-    >>> a[:-4] += 10
-    >>> a[-10:13] -= 20
-    >>> a[-8]
-    -10
 
     :param zero_factory: callable returning additive identity
     :param zero_test: test for equality to zero

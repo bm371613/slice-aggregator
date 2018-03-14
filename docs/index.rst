@@ -10,19 +10,19 @@ It is a library for aggregating values assigned to indices by slices
 
     >>> import slice_aggregator
     >>> a = slice_aggregator.ixs_by_slices()
-    >>> a[-4] += 10
-    >>> a[13] -= 20
-    >>> a[-8:]
-    -10
+    >>> a[-5] += 1
+    >>> a[10] -= 2.5
+    >>> a[-10:]
+    -1.5
 
 and the other way around
 
     >>> import slice_aggregator
     >>> a = slice_aggregator.slices_by_ixs()
-    >>> a[:-4] += 10
-    >>> a[-10:13] -= 20
-    >>> a[-8]
-    -10
+    >>> a[:-5] += 1
+    >>> a[-10:10] -= 2.5
+    >>> a[-10]
+    -1.5
 
 .. toctree::
    :maxdepth: 2
