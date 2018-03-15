@@ -29,3 +29,10 @@ and the other way around
     -1.5
 
 `Read the docs <https://slice-aggregator.readthedocs.io/>`_ to find out more!
+
+Installation
+------------
+
+.. code-block:: shell
+
+    pip install slice-aggregator

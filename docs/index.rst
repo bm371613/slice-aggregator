@@ -24,6 +24,19 @@ and the other way around
     >>> a[-10]
     -1.5
 
+Installation
+------------
+
+.. code-block:: shell
+
+    pip install slice-aggregator
+
+Useful links
+------------
+
+ - `Source code <https://github.com/bm371613/slice-aggregator>`_
+ - `PyPI <https://pypi.org/project/slice-aggregator/>`_
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
